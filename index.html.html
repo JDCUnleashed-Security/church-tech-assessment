@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Church Technology Assessment Tool</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Newsreader:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
+:root{
+  --ink:#1c2530; --ink-soft:#46586b; --paper:#f4f1ea; --card:#fffdf8;
+  --line:#d9d2c4; --line-soft:#e8e3d8;
+  --brand:#7a4b2b; --brand-deep:#5e3a21; --gold:#b8893f;
+  --green:#3f7d52; --amber:#c2872b; --red:#b04a3c; --blue:#3a6079;
+  --shadow:0 1px 2px rgba(40,30,20,.06),0 8px 28px rgba(60,40,20,.07);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'IBM Plex Sans',sans-serif;background:var(--paper);color:var(--ink);line-height:1.55;
+  background-image:radial-gradient(circle at 12% 8%,rgba(184,137,63,.05),transparent 40%),radial-gradient(circle at 88% 92%,rgba(122,75,43,.04),transparent 45%);}
+.wrap{max-width:980px;margin:0 auto;padding:0 20px 120px}
+header.top{text-align:center;padding:54px 20px 30px}
+.eyebrow{font-family:'IBM Plex Sans';letter-spacing:.32em;text-transform:uppercase;font-size:11px;color:var(--gold);font-weight:600}
+h1{font-family:'Fraunces',serif;font-weight:600;font-size:clamp(30px,5vw,46px);line-height:1.05;margin:14px 0 6px;color:var(--brand-deep)}
+.sub{font-family:'Newsreader',serif;font-style:italic;font-size:19px;color:var(--ink-soft)}
+.rule{width:64px;height:3px;background:var(--gold);margin:22px auto 0;border-radius:2px}
+
+.meta{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px;box-shadow:var(--shadow);margin-bottom:26px}
+.meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.meta label{display:block;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:5px}
+.meta input{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:15px;background:#fff;color:var(--ink)}
+.meta input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(184,137,63,.15)}
+
+.dash{position:sticky;top:0;z-index:40;background:rgba(244,241,234,.92);backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--line);padding:12px 0;margin-bottom:8px}
+.dash-inner{max-width:980px;margin:0 auto;padding:0 20px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.score-badge{display:flex;align-items:baseline;gap:8px}
+.score-num{font-family:'Fraunces',serif;font-weight:600;font-size:30px;line-height:1;color:var(--brand-deep)}
+.score-den{font-size:14px;color:var(--ink-soft)}
+.maturity-pill{padding:5px 14px;border-radius:999px;font-size:13px;font-weight:600;letter-spacing:.02em}
+.progress-mini{flex:1;min-width:140px;height:8px;background:var(--line-soft);border-radius:99px;overflow:hidden}
+.progress-mini>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold),var(--brand));border-radius:99px;transition:width .4s ease}
+.dash-pct{font-size:13px;color:var(--ink-soft);font-weight:600}
+
+.cat{background:var(--card);border:1px solid var(--line);border-radius:14px;margin-bottom:18px;box-shadow:var(--shadow);overflow:hidden}
+.cat-head{display:flex;align-items:center;gap:14px;padding:18px 22px;cursor:pointer;user-select:none;border-left:5px solid var(--brand)}
+.cat-head:hover{background:#faf7f0}
+.cat-no{font-family:'Fraunces',serif;font-size:22px;font-weight:600;color:var(--gold);min-width:32px}
+.cat-title{font-family:'Fraunces',serif;font-size:21px;font-weight:600;flex:1;color:var(--brand-deep)}
+.cat-score{font-size:13px;color:var(--ink-soft);text-align:right;font-weight:600;white-space:nowrap}
+.cat-score b{font-family:'Fraunces',serif;font-size:18px;color:var(--ink)}
+.chev{transition:transform .25s;color:var(--ink-soft)}
+.cat.collapsed .chev{transform:rotate(-90deg)}
+.cat.collapsed .cat-body{display:none}
+.cat-body{padding:4px 22px 16px}
+
+.area{padding:16px 0;border-top:1px solid var(--line-soft)}
+.area:first-child{border-top:none}
+.area-title{font-family:'Newsreader',serif;font-weight:600;font-size:17px;color:var(--brand);margin-bottom:12px}
+.area-title .dot{color:var(--gold);margin-right:7px}
+.help-btn{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;
+  border:1px solid var(--gold);color:var(--gold);background:#fff;font-size:12px;font-weight:700;font-family:'IBM Plex Sans',sans-serif;
+  cursor:help;margin-left:9px;vertical-align:middle;position:relative;line-height:1;user-select:none}
+.help-btn:hover,.help-btn.show{background:var(--gold);color:#fff}
+.help-btn .tip{display:none;position:absolute;left:50%;top:140%;transform:translateX(-50%);
+  width:280px;max-width:78vw;background:#3a2c1d;color:#f4ead8;font-family:'IBM Plex Sans',sans-serif;font-weight:400;
+  font-size:12.5px;line-height:1.5;padding:10px 12px;border-radius:8px;box-shadow:0 6px 22px rgba(40,25,10,.28);z-index:60;text-align:left}
+.help-btn .tip::before{content:"";position:absolute;left:50%;top:-6px;transform:translateX(-50%);
+  border:6px solid transparent;border-bottom-color:#3a2c1d;border-top:0}
+.help-btn .tip .lbl{display:block;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);margin-bottom:3px;font-weight:600}
+.help-btn:hover .tip,.help-btn.show .tip{display:block}
+
+.q{padding:14px;border:1px solid var(--line-soft);border-radius:10px;margin-bottom:12px;background:#fffefb}
+.q:last-child{margin-bottom:0}
+.q-text{font-size:15px;margin-bottom:12px;color:var(--ink)}
+.row{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-start;margin-bottom:10px}
+.field{flex:1;min-width:200px}
+.field>span{display:block;font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:6px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
+.seg button{border:none;background:transparent;padding:7px 12px;font-family:inherit;font-size:13px;cursor:pointer;color:var(--ink-soft);border-right:1px solid var(--line-soft)}
+.seg button:last-child{border-right:none}
+.seg button.on{color:#fff;font-weight:600}
+.seg button.on[data-v="Current"],.seg button.on[data-v="Yes"]{background:var(--green)}
+.seg button.on[data-v="Needs Improvement"]{background:var(--amber)}
+.seg button.on[data-v="Not Present"],.seg button.on[data-v="No"]{background:var(--red)}
+.scoreseg button.on{background:var(--brand)}
+.scoreseg button{min-width:34px;text-align:center;font-weight:600}
+.txt{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:14px;background:#fff;color:var(--ink);resize:vertical;min-height:38px}
+.txt:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(184,137,63,.13)}
+
+.results{background:linear-gradient(160deg,#fffdf8,#f7f2e8);border:1px solid var(--line);border-radius:16px;padding:28px;margin-top:26px;box-shadow:var(--shadow)}
+.results h2{font-family:'Fraunces',serif;font-size:26px;color:var(--brand-deep);margin-bottom:4px}
+.results .lead{font-family:'Newsreader',serif;font-style:italic;color:var(--ink-soft);margin-bottom:20px}
+.bars{display:flex;flex-direction:column;gap:10px;margin:18px 0}
+.bar-row{display:grid;grid-template-columns:230px 1fr 70px;gap:12px;align-items:center}
+.bar-row .nm{font-size:13px;color:var(--ink)}
+.bar-track{height:18px;background:var(--line-soft);border-radius:99px;overflow:hidden}
+.bar-fill{height:100%;border-radius:99px;transition:width .5s ease}
+.bar-row .val{font-size:13px;font-weight:600;text-align:right;font-family:'Fraunces',serif}
+.recs{margin-top:22px}
+.recs h3{font-family:'Fraunces',serif;font-size:19px;color:var(--brand-deep);margin-bottom:10px}
+.rec{padding:13px 15px;border-left:4px solid var(--gold);background:#fffdf6;border-radius:0 8px 8px 0;margin-bottom:9px}
+.rec .rh{font-weight:600;font-size:14px;margin-bottom:3px}
+.rec .rb{font-size:13px;color:var(--ink-soft)}
+.rec.high{border-left-color:var(--red)} .rec.med{border-left-color:var(--amber)} .rec.low{border-left-color:var(--green)}
+.prio{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:4px;margin-right:8px;vertical-align:middle}
+.prio.high{background:#f6e3df;color:var(--red)} .prio.med{background:#f6ecd6;color:var(--amber)} .prio.low{background:#dcebe1;color:var(--green)}
+
+.actions{position:fixed;bottom:0;left:0;right:0;background:rgba(244,241,234,.95);backdrop-filter:blur(8px);border-top:1px solid var(--line);padding:13px 20px;z-index:50}
+.actions-inner{max-width:980px;margin:0 auto;display:flex;gap:12px;justify-content:flex-end;flex-wrap:wrap}
+.btn{font-family:inherit;font-size:14px;font-weight:600;padding:11px 20px;border-radius:9px;border:1px solid var(--brand);cursor:pointer;background:#fff;color:var(--brand);transition:.15s}
+.btn:hover{background:#faf3ea}
+.btn.primary{background:var(--brand);color:#fff}
+.btn.primary:hover{background:var(--brand-deep)}
+.btn.ghost{border-color:var(--line);color:var(--ink-soft)}
+.note{font-size:12px;color:var(--ink-soft);text-align:center;margin-top:28px;font-style:italic;font-family:'Newsreader',serif}
+@media(max-width:640px){.meta-grid{grid-template-columns:1fr}.bar-row{grid-template-columns:1fr;gap:4px}.bar-row .val{text-align:left}.cat-score .lbl{display:none}}
+@media print{.actions,.dash,.cat-head{position:static}.btn{display:none}body{background:#fff}}
+</style>
+</head>
+<body>
+<div class="dash">
+  <div class="dash-inner">
+    <div class="score-badge"><span class="score-num" id="dScore">0</span><span class="score-den">/ 5.0 avg</span></div>
+    <span class="maturity-pill" id="dMaturity" style="background:var(--line-soft);color:var(--ink-soft)">Not started</span>
+    <div class="progress-mini"><i id="dProg"></i></div>
+    <span class="dash-pct" id="dPct">0% complete</span>
+  </div>
+</div>
+
+<div class="wrap">
+  <header class="top">
+    <div class="eyebrow">Technology Survey &amp; Assessment</div>
+    <h1>Church Technology Assessment</h1>
+    <div class="sub">A guided tool for evaluating and strengthening ministry technology</div>
+    <div class="rule"></div>
+  </header>
+
+  <div class="meta">
+    <div class="meta-grid">
+      <div><label>Church / Congregation</label><input id="m_church" placeholder="e.g., Cusseta Road Church of Christ"></div>
+      <div><label>Location</label><input id="m_loc" placeholder="City, State"></div>
+      <div><label>Assessor Name</label><input id="m_assessor" placeholder="Your name"></div>
+      <div><label>Assessment Date</label><input id="m_date" type="date"></div>
+    </div>
+  </div>
+
+  <div id="cats"></div>
+
+  <div class="results" id="results">
+    <h2>Assessment Summary</h2>
+    <div class="lead" id="summaryLead">Begin answering questions to see scores and recommendations appear here.</div>
+    <div class="bars" id="bars"></div>
+    <div class="recs" id="recs"></div>
+  </div>
+
+  <div class="note">Scores are saved in this browser tab only. Use “Export Report” to save a permanent copy you can print, email, or keep on file.</div>
+</div>
+
+<div class="actions">
+  <div class="actions-inner">
+    <button class="btn ghost" onclick="expandAll(true)">Expand all</button>
+    <button class="btn ghost" onclick="expandAll(false)">Collapse all</button>
+    <button class="btn" onclick="exportData()">Save Data (.json)</button>
+    <button class="btn primary" onclick="exportReport()">Export Report</button>
+  </div>
+</div>
+
+<script>
+const DATA = {"title":"Technology Survey and Assessment","subtitle":"Church Technology Assessment Tool","categories":[{"name":"Organizational Overview","areas":[{"area":"Mission, Vision, and Ministry Priorities","help":"Every technology investment supports the church’s core purpose, strategic direction, and ministry outcomes.","questions":[{"type":"scored","q":"Does current technology help drive the mission, vision, and ministry priorities?"}]},{"area":"Church Size and Growth Trends","help":"Technology supports the church’s current population and scales effectively for growth.","questions":[{"type":"scored","q":"Does current technology effectively manage the size of the congregation now and future growth trends?"}]},{"area":"Worship Styles and Service Formats","help":"Technology enhances worship experiences, meets congregational needs, and supports ministry outreach across in-person, hybrid, and online formats.","questions":[{"type":"scored","q":"Does current technology consistently and effectively support the worship and service formats?"},{"type":"scored","q":"Does current technology allow members to submit announcements and prayer requests, public and private? Does it allow an approval process before content is released to public view?"}]},{"area":"Budget and Funding Sources","help":"Technology investments are financially sustainable, strategically prioritized, and aligned with ministry goals.","questions":[{"type":"scored","q":"Does current technology help maintain and allocate budget areas accurately, integrate with the congregation's bank account, support two-or-more-person integrity, and produce reports for financial and tax auditing?"},{"type":"scored","q":"Does current technology allow members to submit expense reports including uploaded receipts?"},{"type":"scored","q":"Does current technology allow the creation of line-item budget areas?"}]},{"area":"Leadership's Tech Literacy and Openness to Change","help":"Church leadership is capable of guiding technology adoption.","questions":[{"type":"yesno","q":"Do you, as part of the leadership of this congregation, see the importance of technology for the future sustainment of the congregation's operations?","noLabel":"No (explain why not)"}]},{"area":"Long-term Strategic Plans or Upcoming Initiatives","help":"Technology investments align with the church’s strategic vision, upcoming programs, and future growth, enabling sustainable ministry impact.","questions":[{"type":"scored","q":"Does current technology support expansion of ministries?"},{"type":"scored","q":"Does current technology support growth in digital engagement?"}]},{"area":"Existing Challenges and Pain Points","help":"Identify current technology gaps, inefficiencies, or obstacles that limit ministry effectiveness.","questions":[{"type":"yesno","q":"Are there any challenges or pain points with technology that have not been captured thus far?","yesLabel":"Yes (explain what they are)"}]}]},{"name":"Infrastructure and Hardware","areas":[{"area":"Internet Service","help":"The church has a robust, reliable, and fast internet connection to support operations, worship, and digital ministry initiatives.","questions":[{"type":"scored","q":"Does the congregation have a reliable internet service provider (ISP)?"},{"type":"scored","q":"Does the internet service cover all classrooms?"},{"type":"scored","q":"Will the internet service support updated technology in the rooms such as smart monitors or smart TVs?"}]},{"area":"Computers and Mobile Devices","help":"Staff, volunteers, and ministry leaders have reliable, up-to-date devices that support church operations, ministry activities, and digital engagement.","questions":[{"type":"scored","q":"Does the current ISP provide bandwidth to support multiple devices (cellphones, tablets, etc.) without connectivity issues, and can it grow with the congregation?"},{"type":"scored","q":"Are staff computers patched and updated with current software and drivers? If staff use personal computers, are security patches required and verified?"}]},{"area":"Printers, Copiers, and Peripherals","help":"All printing, copying, and peripheral devices support church operations efficiently, reliably, and cost-effectively.","questions":[{"type":"scored","q":"Does the ISP support congregation and administrative devices (e.g., printers) at the same time (usually Sundays and Wednesdays)? Are networked peripheral devices protected?"}]},{"area":"Backup Power and Surge Protection","help":"Critical church technology systems remain operational during power interruptions and are protected against electrical damage.","questions":[{"type":"scored","q":"Are there backup power systems for the building? Are they tested? Does the building use solar power?"},{"type":"scored","q":"Are surge protectors used with all IT and AV equipment/devices?"}]},{"area":"Hardware Lifecycle and Replacement Programs","help":"All technology hardware is up-to-date, reliable, and replaced proactively to prevent downtime, inefficiency, and security risks.","questions":[{"type":"scored","q":"Does the hardware/software have warranties? Does the warranty include technology refresh (replacements)?"}]}]},{"name":"Software and Cloud Systems","areas":[{"area":"Office Productivity Suite","help":"Staff and volunteers have the tools they need to create, share, and collaborate efficiently on documents, spreadsheets, presentations, and communications.","questions":[{"type":"scored","q":"Does the congregation have a shared office productivity suite for staff collaboration, or does each staff member use their own personal suite?"}]},{"area":"Document Storage and Sharing Practices","help":"Church documents are stored securely, accessible to authorized staff and volunteers, and shared efficiently to support ministry and operational workflows.","questions":[{"type":"scored","q":"What is used for document storage?"},{"type":"scored","q":"Is document storage centralized? If not, how do staff collaborate on decisions, events, processes, and ministries?"},{"type":"scored","q":"If documents are centralized, are proper access controls configured to enforce least privilege and need-to-know?"}]},{"area":"Email and Calendar Systems","help":"Staff, volunteers, and leadership have reliable, secure, and efficient systems for communication, scheduling, and coordination.","questions":[{"type":"scored","q":"Does the congregation have a calendar? Is it centralized for maximum visibility?"},{"type":"scored","q":"Does the calendar facilitate scheduling meetings for elders, ministers, deacons, and/or ministry leaders?"},{"type":"scored","q":"Does the congregation use a branded email system, or does everyone use personal email?"},{"type":"scored","q":"Does the congregation use group emails/distribution lists for groups such as elders, deacons, or ministry leaders/members?"}]},{"area":"Accounting and Financial Management Software","help":"The church’s financial system is accurate, secure, compliant, and aligned with stewardship principles to support transparency and informed decision-making.","questions":[{"type":"scored","q":"Does the congregation use accounting software to manage inflow and outflow of money?"},{"type":"scored","q":"Does it manage the congregation's bills and quarterly/yearly taxes?"}]},{"area":"Church Management System (ChMS)","help":"The church’s ChMS effectively supports member engagement, volunteer coordination, event management, and administrative efficiency while integrating with other key…","questions":[{"type":"scored","q":"Does the congregation have a church management system?"},{"type":"scored","q":"Is the ChMS used to manage members, attendance, ministries, and visitors?"},{"type":"scored","q":"Does the ChMS integrate with any other technology the congregation uses?"},{"type":"yesno","q":"Is there anything your ChMS does not do that you would like it to do?","yesLabel":"Yes (explain what is wanted)"}]},{"area":"Collaboration and Project Management Tools","help":"Staff, ministry leaders, and volunteers have the right tools to plan, communicate, and execute projects effectively, improving coordination and accountability across…","questions":[{"type":"scored","q":"Does the congregation use collaboration or project management tools (e.g., for events, ministries, and tasks)?"}]},{"area":"Licensing Compliance and Renewal Tracking","help":"The church maintains legal and up-to-date software, media, and technology licenses while managing renewals efficiently to avoid service interruptions or compliance risks.","questions":[{"type":"scored","q":"Is all technology licensed?"},{"type":"scored","q":"Is all software/hardware inventoried and are licenses tracked?"}]}]},{"name":"Worship and Media Technology","areas":[{"area":"Audio System","help":"The church’s audio system supports clear, high-quality sound for worship, preaching, music, and events both in-person and online while being dependable, scalable, and…","questions":[{"type":"scored","q":"What type of sound system is installed (mixing consoles, speakers, microphones), and how well does it meet the needs of worship services and events?"},{"type":"scored","q":"Are there consistent audio quality issues such as feedback, uneven volume levels, or difficulty hearing speakers?"},{"type":"scored","q":"Is the audio system designed to accommodate multiple ministry uses such as worship, livestream audio, etc.?"},{"type":"scored","q":"Do at least two members work the audio at a time, one for worship and one for livestream?"}]},{"area":"Video System","help":"The church’s video system delivers high-quality visuals for in-person services, hybrid worship, recording, and livestreaming.","questions":[{"type":"scored","q":"What video equipment is used for projection or video capture (cameras, switchers, projectors, LED screens)?"},{"type":"scored","q":"Are video feeds clearly visible throughout the worship space without brightness or resolution issues?"},{"type":"scored","q":"Is the video system capable of supporting multiple camera angles or integrated video production?"}]},{"area":"Lighting and Stage/Pulpit Control Systems","help":"The church’s lighting and stage control systems enhance worship experiences, support video and audio production, and are safe, reliable, and easy for staff and…","questions":[{"type":"scored","q":"What lighting systems are installed for stage, worship, and general sanctuary illumination?"},{"type":"scored","q":"Are lighting controls programmable for different types of services or events?"},{"type":"scored","q":"Does the lighting setup effectively support video recording and livestreaming?"}]},{"area":"Presentation Software","help":"The church has reliable, flexible, and easy-to-use software for worship services, announcements, multimedia integration, and events.","questions":[{"type":"scored","q":"What software is used to display lyrics, scriptures, announcements, and sermon slides during services?"},{"type":"scored","q":"How easily can ministry leaders or volunteers prepare and update presentation content?"},{"type":"scored","q":"Are presentation systems integrated with media libraries, song databases, or sermon notes?"},{"type":"scored","q":"Is the presentation system reliable during services, and how often do technical issues occur?"}]},{"area":"Livestream Platforms","help":"The church can reliably broadcast services, events, and programs online, reaching both local and remote audiences with high-quality video and audio.","questions":[{"type":"scored","q":"What platform is used to livestream services (e.g., website, social platforms, dedicated streaming services)?"},{"type":"scored","q":"What equipment and software support the livestream process?"},{"type":"scored","q":"How reliable is the livestream experience in terms of audio/video quality and connectivity?"},{"type":"scored","q":"Are livestream analytics or viewer engagement metrics monitored?"}]},{"area":"Recording and Post-Production Workflows","help":"Services, sermons, events, and media content are captured, edited, and published efficiently and professionally for on-demand viewing, social media, and archival…","questions":[{"type":"scored","q":"Are worship services or sermons recorded for later distribution (podcasts, social media, website)?"},{"type":"scored","q":"What tools or software are used for editing and post-production of recorded media?"},{"type":"scored","q":"Is there a defined workflow for capturing, editing, and publishing recorded content?"}]},{"area":"Volunteer and Staff Training for AV Systems","help":"Volunteers and staff are effectively trained to operate audio, video, lighting, and presentation systems safely and efficiently.","questions":[{"type":"scored","q":"Are volunteers provided formal training before operating audio, video, or presentation systems?"},{"type":"scored","q":"Are written guides or training resources available for operating AV equipment?"},{"type":"scored","q":"How easily can new volunteers learn and operate the systems?"},{"type":"scored","q":"Is there a designated leader or coordinator responsible for AV team development?"}]},{"area":"Maintenance Schedule for Equipment","help":"All church technology equipment including AV systems, computers, network hardware, and other devices is regularly maintained to prevent downtime, extend lifespan, and…","questions":[{"type":"scored","q":"Is there a regular maintenance schedule for inspecting and servicing AV equipment?"},{"type":"scored","q":"How often are microphones, cables, projectors, cameras, and lighting systems tested for reliability?"},{"type":"scored","q":"Are equipment warranties, repair records, and replacement timelines documented?"},{"type":"scored","q":"Is there a budget or plan for upgrading aging AV equipment?"}]}]},{"name":"Cybersecurity and Data Protection","areas":[{"area":"Password Management and Multifactor Authentication (MFA)","help":"Secure access to church systems, protect sensitive data, and reduce the risk of unauthorized access by implementing strong password policies and MFA wherever possible.","questions":[{"type":"scored","q":"Do you use an MFA app for all systems with administrative access, paid for by the church?"},{"type":"scored","q":"Are administrative users trained to create strong passwords for church systems and technology?"},{"type":"scored","q":"Do you use a password storage app (e.g., Keeper) to keep passwords safe?"},{"type":"scored","q":"Do you use privileged access management (PAM) tools to control administrative access?"}]},{"area":"Network Security","help":"The church’s network and connected devices are protected against cyber threats, malware, and unauthorized access while maintaining safe and reliable operations.","questions":[{"type":"scored","q":"Do you have a network admin who monitors to ensure your network has not been compromised?"},{"type":"scored","q":"Do you employ access control to technology assets that store or process sensitive information?"},{"type":"scored","q":"Do you have guest Wi-Fi set up, or is everyone (including guests) on the same network?"},{"type":"scored","q":"Do you have incident response procedures for network intrusion, especially where sensitive data is processed or stored?"}]},{"area":"Data Backup and Recovery Plan","help":"The church’s critical data including financial records, member information, media files, and administrative documents is securely backed up and can be quickly…","questions":[{"type":"scored","q":"What technology is used to create backups of the church's most critical information?"},{"type":"scored","q":"Are any cloud technologies used for storage and/or backup?"},{"type":"scored","q":"If not cloud, do you use other media such as USB drives?"},{"type":"scored","q":"Do the stewards of the church's most sensitive information keep it on the network, cloud, or on host laptops/computers?"},{"type":"scored","q":"Is non-cloud equipment backed up? If so, how?"}]},{"area":"Access Controls","help":"Church systems, data, and physical spaces are protected by clearly defined access rights, limiting exposure to sensitive information and preventing unauthorized use.","questions":[{"type":"scored","q":"Do workers of the congregation have access to church technology based on their role?"},{"type":"scored","q":"Is there unrestricted access to places that store sensitive information, such as offices?"},{"type":"scored","q":"Is auditing enabled for all technology used by the church?"}]},{"area":"Incident Response and Reporting Procedure","help":"The church has a clear, efficient, and documented process to detect, report, respond to, and recover from IT security incidents or technology-related emergencies.","questions":[{"type":"scored","q":"Do users of technology know how to respond to incidents?"},{"type":"scored","q":"Are users of technology trained to recognize security incidents?"},{"type":"scored","q":"Are after-action reviews done after security incidents, or are procedures in place to conduct them?"}]},{"area":"Compliance with Data Privacy Laws","help":"The church collects, stores, processes, and shares members, volunteer, and staff data in accordance with applicable privacy laws and best practices.","questions":[{"type":"scored","q":"Does technology that collects PII meet Privacy Act of 1974 requirements, and does technology that collects card/financial information (e.g., online giving) meet the PCI Security Framework?"},{"type":"scored","q":"Does administration collect the least amount of PII, protect it, and dispose of it per federal and state laws and regulations?"},{"type":"scored","q":"Are all technology, systems, and tools used by the church hardened to support regulatory or compliance requirements?"}]},{"area":"Security Awareness Training for Staff and Volunteers","help":"Staff and volunteers are aware of cybersecurity risks, understand safe practices, and can help protect church systems, data, and digital assets from threats.","questions":[{"type":"scored","q":"Are users of the church's technology required to take security awareness training in order to use the technology, for both admins and non-admin users?"}]}]},{"name":"Website and Digital Presence","areas":[{"area":"Website Platform","help":"The church’s website platform is reliable, secure, scalable, and easy for staff and volunteers to manage.","questions":[{"type":"scored","q":"Is the church's website scalable and able to be updated at any time?"},{"type":"scored","q":"Does the website support integrations that scale with the growth of the congregation and church administration?"}]},{"area":"Mobile Responsiveness and Accessibility","help":"The website is usable and accessible on all devices, providing an inclusive experience for all users, including those with disabilities.","questions":[{"type":"scored","q":"Does the website accommodate Section 508 and accessibility requirements?"}]},{"area":"SEO and Analytics","help":"The website is discoverable, its performance is measurable, and insights are available to guide content strategy and engagement.","questions":[{"type":"scored","q":"Is SEO configured to bring searchers and visitors to the website? Is SEO used as an evangelistic tool?"}]},{"area":"Content Management Process","help":"Content is updated consistently, accurately, and efficiently, maintaining an engaging and relevant website for staff, volunteers, and congregation members.","questions":[{"type":"scored","q":"What technology is used to create content for the church? List all free platforms as well."}]},{"area":"Online Giving System","help":"Secure, user-friendly online giving experience that integrates with financial systems and allows accurate tracking and reporting of contributions.","questions":[{"type":"scored","q":"Does the website support online giving? Are other online giving platforms used, such as a ChMS?"},{"type":"scored","q":"Is encryption used to keep financial and personal information safe?"}]},{"area":"Integration with ChMS and Communication Tools","help":"Seamless integration between the website, ChMS, email, and communication tools to maintain accurate, synchronized information and efficient workflows.","questions":[{"type":"scored","q":"Does the website integrate with the ChMS or other technology tools used by the church?"}]},{"area":"Branding Consistency","help":"The website reflects the church’s mission and values consistently across all pages and aligns with other digital and print communications.","questions":[{"type":"scored","q":"Does the church use the same logo across media, website, and social media platforms?"},{"type":"scored","q":"Is everything consistently branded to provide a seamless experience for visitors and members?"}]}]},{"name":"Communication and Engagement Tools","areas":[{"area":"Email Marketing","help":"The church communicates effectively with members, volunteers, and attendees through professional, targeted, and trackable email campaigns.","questions":[{"type":"scored","q":"Does the church use an email marketing tool to communicate with members and visitors?"},{"type":"scored","q":"Are recipient lists segmented (e.g., members, visitors, ministry groups) so that messages reach the right people?"},{"type":"scored","q":"Does the tool honor unsubscribe requests and comply with anti-spam requirements (e.g., the CAN-SPAM Act)?"}]},{"area":"Text Messaging and Alerts","help":"Timely and direct communication with congregation members through SMS or push notifications for events, updates, and emergencies.","questions":[{"type":"scored","q":"Does the church use text messaging or alert systems for announcements, reminders, and emergencies?"},{"type":"scored","q":"Is there a defined process for who is authorized to send mass texts, and how urgent or emergency alerts are approved and issued?"},{"type":"scored","q":"Do members opt in to text messaging, and are their phone numbers stored and protected appropriately?"}]},{"area":"Social Media Presence and Management Tools","help":"The church maintains an active, engaging, and consistent presence across social media platforms to reach current and prospective members.","questions":[{"type":"scored","q":"Does the church maintain an active social media presence, and are management/scheduling tools used?"},{"type":"scored","q":"Is access to social media accounts controlled by role, with shared logins avoided and access removed when volunteers or staff leave?"},{"type":"scored","q":"Is there a content approval process and posting guidelines to ensure posts are accurate, consistent, and appropriate?"}]},{"area":"Announcement and Signage Systems","help":"Church announcements and information are communicated effectively to congregants and visitors using digital signage and displays.","questions":[{"type":"scored","q":"Does the church use digital or physical signage systems for announcements?"},{"type":"scored","q":"Is signage content kept current, and is there a clear owner responsible for updating it?"}]},{"area":"Integration between Communication Tools and Databases","help":"All communication tools (email, SMS, social media, mobile app, digital signage) integrate seamlessly with ChMS and other church databases for consistent, accurate,…","questions":[{"type":"scored","q":"Do communication tools integrate with the ChMS or member databases to keep contact information current?"},{"type":"scored","q":"When a member updates their information or opts out, does the change carry across all connected communication tools?"}]}]},{"name":"Ministry-Specific Technologies","areas":[{"area":"Children's Check-in and Safety Systems","help":"A secure, efficient, and accurate process for checking in children, tracking attendance, and safeguarding their well-being while on church premises.","questions":[{"type":"scored","q":"Does the church use a check-in and check-out system for children's ministry that securely matches each child to an authorized guardian?"},{"type":"scored","q":"Does the system produce matching labels or codes so that a child is only released to the adult who dropped them off?"},{"type":"scored","q":"Is access to children's records (names, allergies, guardians, contact details) restricted to authorized workers on a need-to-know basis?"},{"type":"scored","q":"Does the system support or track background-check status and required training for those serving in children's ministry?"},{"type":"scored","q":"Is children's personal information protected, retained only as long as needed, and disposed of in accordance with applicable laws?"}]},{"area":"Youth Ministry Engagement Applications","help":"Enhance youth engagement through digital platforms that provide communication, event registration, content delivery, and community-building features.","questions":[{"type":"scored","q":"Does the youth ministry use applications or tools to engage and communicate with youth and parents?"},{"type":"scored","q":"Do adult-to-youth communications follow a safety policy (e.g., visible to parents or leaders, no private one-on-one messaging)?"},{"type":"scored","q":"Is parental consent obtained before collecting youth information or adding minors to communication tools?"}]},{"area":"Small Group Management and Curriculum Distribution","help":"Effective small group ministry through tools that track attendance, distribute curriculum, and communicate with group leaders and participants.","questions":[{"type":"scored","q":"Does the church use tools to manage small groups and distribute curriculum?"},{"type":"scored","q":"Are group rosters and member contact details shared only with the appropriate leaders rather than openly visible?"},{"type":"scored","q":"Is distributed curriculum properly licensed for the church's use and number of copies?"}]},{"area":"Volunteer Scheduling Tools","help":"Volunteer schedules are organized, accessible, and communicated efficiently.","questions":[{"type":"scored","q":"Does the church use volunteer scheduling tools for ministries and service teams?"},{"type":"scored","q":"Do the tools track required clearances (background checks, training) so that only qualified volunteers are scheduled for sensitive roles?"},{"type":"scored","q":"Can volunteers easily view their assignments, confirm availability, and request substitutes?"}]},{"area":"Counseling or Elders/Ministry Care Tools","help":"Pastoral care and counseling activities are managed securely, maintaining confidentiality while allowing staff to track care and follow-ups.","questions":[{"type":"scored","q":"Does the church use tools to manage counseling, care requests, or elder/ministry follow-up?"},{"type":"scored","q":"Are sensitive care and counseling records stored confidentially, encrypted, and accessible only to those with a legitimate need?"},{"type":"scored","q":"Is there a clear policy on what care information is recorded, who may view it, and how long it is retained?"},{"type":"scored","q":"Are confidential conversations conducted over secure channels rather than personal email or unsecured messaging?"}]},{"area":"Facilities Scheduling and Management Tools","help":"Church facilities are scheduled efficiently, conflicts are minimized, and resources are allocated effectively for ministries, events, and community use.","questions":[{"type":"scored","q":"Does the church use tools to schedule and manage the use of facilities and rooms?"},{"type":"scored","q":"Does the system prevent double-booking and give ministry leaders visibility into room availability?"}]}]},{"name":"Facilities and Building Systems","areas":[{"area":"Security Cameras and Access Control Systems","help":"Church facilities are secure through monitoring and controlled access, protecting staff, volunteers, members, and assets.","questions":[{"type":"scored","q":"Does the building have security cameras and access control systems covering entrances and sensitive areas?"},{"type":"scored","q":"Are recordings stored securely, retained for a defined period, and accessible only to authorized personnel?"},{"type":"scored","q":"Are door locks, key fobs, or codes managed so that access can be granted and revoked by role, especially after staff or volunteer changes?"},{"type":"scored","q":"Are the camera and access systems monitored, tested, and maintained on a regular schedule?"}]},{"area":"Smart Thermostats and Building Automation","help":"Comfort, energy efficiency, and operational control through automated climate and building systems.","questions":[{"type":"scored","q":"Does the building use smart thermostats or building automation to manage climate and energy use?"},{"type":"scored","q":"Can systems be scheduled or controlled remotely to match the church's service and event calendar?"},{"type":"scored","q":"Are these connected systems secured (changed default passwords, separate network) to prevent unauthorized access?"}]},{"area":"Lighting and Environmental Controls","help":"Lighting and environmental systems support ministry activities, enhance safety, and conserve energy.","questions":[{"type":"scored","q":"Are building lighting and environmental controls automated or centrally managed?"},{"type":"scored","q":"Do the controls support different settings for services, events, and energy savings during unoccupied times?"}]},{"area":"Digital Signage and Information Kiosks","help":"Timely and relevant information to congregants, visitors, and staff through interactive or static digital displays.","questions":[{"type":"scored","q":"Does the building use digital signage or information kiosks to guide and inform visitors?"},{"type":"scored","q":"Is the displayed content kept current, and is there a clear owner responsible for updates?"}]},{"area":"Accessibility Technology","help":"Church facilities are inclusive, enabling participation for members and visitors with hearing, vision, or mobility challenges.","questions":[{"type":"scored","q":"Does the building provide accessibility technology such as hearing assistance systems for worship?"},{"type":"scored","q":"Are accessible entrances, controls, and seating provided and maintained for members and visitors with disabilities?"}]}]},{"name":"IT Governance and Support","areas":[{"area":"Presence of IT Leadership or External Vendor Support","help":"The church has dedicated IT leadership or reliable external support to oversee technology strategy, maintenance, and troubleshooting.","questions":[{"type":"scored","q":"Does the church have IT leadership internally or reliable external vendor support?"},{"type":"scored","q":"Is there a clear point of contact responsible for technology decisions and coordination?"},{"type":"scored","q":"If external vendors are used, are responsibilities, response times, and costs defined in writing?"}]},{"area":"Policies for Equipment Use, Purchasing, and Disposal","help":"Proper management of technology assets through clear policies covering use, acquisition, and end-of-life processes.","questions":[{"type":"scored","q":"Does the church have an acceptable-use policy governing how staff and volunteers may use church technology?"},{"type":"scored","q":"Is there a defined process for approving and purchasing new technology to avoid duplicate or incompatible tools?"},{"type":"scored","q":"Is data securely wiped from devices before they are disposed of, donated, or reassigned?"}]},{"area":"Documentation and Inventory of All Technology Assets","help":"An accurate and up-to-date inventory of all hardware, software, and digital assets to support management, security, and budgeting.","questions":[{"type":"scored","q":"Is there a current inventory of all hardware, software, and online accounts the church owns?"},{"type":"scored","q":"Are key configurations, account ownership, and passwords documented so the church is not dependent on one person's memory?"}]},{"area":"User Support Processes","help":"Timely, organized, and effective support for technology users to minimize disruptions to church operations.","questions":[{"type":"scored","q":"Is there a defined process for users to request and receive technical support?"},{"type":"scored","q":"Are support requests tracked so that recurring problems can be identified and resolved?"}]},{"area":"Training and Onboarding for New Users","help":"Staff and volunteers can effectively use church technology through structured onboarding and ongoing training.","questions":[{"type":"scored","q":"Is there training and onboarding for new staff and volunteers who use church technology?"},{"type":"scored","q":"When someone joins or leaves, are accounts and access provisioned and removed promptly?"}]},{"area":"Budgeting for Maintenance, Licensing, and Upgrades","help":"Sustainable funding for technology maintenance, software licensing, and equipment upgrades to maintain operational efficiency and security.","questions":[{"type":"scored","q":"Is there a budget that plans for ongoing maintenance, licensing, and upgrades rather than only one-time purchases?"},{"type":"scored","q":"Are renewal dates and end-of-life timelines tracked so the church is not caught off guard by expirations?"}]}]},{"name":"Training and Culture","areas":[{"area":"Staff and Volunteer Technology Skill Levels","help":"Staff and volunteers have the necessary technical skills to effectively use church technology systems and perform their roles efficiently.","questions":[{"type":"scored","q":"Are staff and volunteer technology skill levels adequate for the tools the church uses?"},{"type":"scored","q":"Has the church identified skill gaps that limit how well current technology is used?"}]},{"area":"Ongoing Training and Knowledge-Sharing Practices","help":"Technical competence through structured training, workshops, and knowledge-sharing practices among staff and volunteers.","questions":[{"type":"scored","q":"Are there ongoing training and knowledge-sharing practices to keep skills current?"},{"type":"scored","q":"Is knowledge documented and shared so that a ministry is not dependent on a single person?"}]},{"area":"Communication between IT/Media and Ministry Leaders","help":"Effective collaboration between technical teams and ministry leadership to align technology with ministry needs and priorities.","questions":[{"type":"scored","q":"Is there effective communication between IT/media teams and ministry leaders?"},{"type":"scored","q":"Do ministry leaders have a clear way to raise technology needs and have them considered?"}]},{"area":"Willingness to Adopt New Tools","help":"A culture of openness and adaptability among staff and volunteers to embrace new technologies that enhance ministry and operations.","questions":[{"type":"scored","q":"Is there a general willingness among staff and volunteers to adopt new tools?"},{"type":"scored","q":"Are new tools introduced with enough support and training that people actually use them?"}]},{"area":"Change Management Strategy","help":"Structured planning, communication, and support for implementing technology changes, minimizing disruption and maximizing adoption.","questions":[{"type":"scored","q":"Does the church have a change management strategy for introducing new technology?"},{"type":"scored","q":"When changes are made, are they communicated in advance with a plan for feedback and support?"}]}]}]};
+const STATUS_OPTS = ["Current","Needs Improvement","Not Present"];
+const state = {}; // key -> {status, name, score, needs, yn, explain}
+let qcount=0;
+
+function key(c,a,q){return 'c'+c+'a'+a+'q'+q;}
+
+function render(){
+  const root=document.getElementById('cats');
+  DATA.categories.forEach((cat,ci)=>{
+    const sec=document.createElement('div');sec.className='cat collapsed';sec.id='cat'+ci;
+    let body='';
+    cat.areas.forEach((ar,ai)=>{
+      let qs='';
+      ar.questions.forEach((qq,qi)=>{
+        const k=key(ci,ai,qi);
+        state[k]={type:qq.type,cat:ci};
+        if(qq.type==='scored'){ qcount++;
+          qs+=`<div class="q">
+            <div class="q-text">${qq.q}</div>
+            <div class="row">
+              <div class="field"><span>Implementation Status</span>
+                <div class="seg" data-k="${k}">${STATUS_OPTS.map(o=>`<button data-v="${o}" onclick="setStatus('${k}','${o}',this)">${o}</button>`).join('')}</div>
+              </div>
+              <div class="field"><span>Effectiveness Score (1–5)</span>
+                <div class="seg scoreseg" data-k="${k}">${[1,2,3,4,5].map(n=>`<button data-v="${n}" onclick="setScore('${k}',${n},this)">${n}</button>`).join('')}</div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="field"><span>Name(s) of Current Technology in Place</span><input class="txt" oninput="setText('${k}','name',this.value)"></div>
+              <div class="field"><span>Needs</span><textarea class="txt" oninput="setText('${k}','needs',this.value)"></textarea></div>
+            </div>
+          </div>`;
+        } else {
+          const yes=qq.yesLabel||'Yes', no=qq.noLabel||'No';
+          qs+=`<div class="q">
+            <div class="q-text">${qq.q}</div>
+            <div class="row">
+              <div class="field"><span>Response</span>
+                <div class="seg" data-k="${k}">
+                  <button data-v="Yes" onclick="setYN('${k}','Yes',this)">${yes}</button>
+                  <button data-v="No" onclick="setYN('${k}','No',this)">${no}</button>
+                </div>
+              </div>
+              <div class="field"><span>Explanation</span><textarea class="txt" oninput="setText('${k}','explain',this.value)"></textarea></div>
+            </div>
+          </div>`;
+        }
+      });
+      const helpBtn = ar.help ? `<span class="help-btn" onclick="this.classList.toggle('show');event.stopPropagation()" tabindex="0" aria-label="What this area covers">?<span class="tip"><span class="lbl">What this covers</span>${ar.help}</span></span>` : '';
+      body+=`<div class="area"><div class="area-title"><span class="dot">◆</span>${ar.area}${helpBtn}</div>${qs}</div>`;
+    });
+    sec.innerHTML=`<div class="cat-head" onclick="toggleCat(${ci})">
+        <span class="cat-no">${String(ci+1).padStart(2,'0')}</span>
+        <span class="cat-title">${cat.name}</span>
+        <span class="cat-score" id="cs${ci}"><span class="lbl">avg </span><b>–</b></span>
+        <span class="chev">▾</span>
+      </div><div class="cat-body">${body}</div>`;
+    root.appendChild(sec);
+  });
+}
+
+function toggleCat(i){document.getElementById('cat'+i).classList.toggle('collapsed');}
+function expandAll(open){document.querySelectorAll('.cat').forEach(c=>c.classList.toggle('collapsed',!open));}
+function segPick(k,v,btn){btn.parentNode.querySelectorAll('button').forEach(b=>b.classList.remove('on'));btn.classList.add('on');}
+
+function setStatus(k,v,btn){segPick(k,v,btn);state[k].status=v;
+  // Not Present implies score 1 if unset
+  if(v==='Not Present'&&!state[k].score){const ss=document.querySelector('.scoreseg[data-k="'+k+'"]');if(ss){const b=ss.querySelector('[data-v="1"]');setScore(k,1,b);}}
+  recompute();}
+function setScore(k,n,btn){segPick(k,n,btn);state[k].score=n;recompute();}
+function setYN(k,v,btn){segPick(k,v,btn);state[k].yn=v;recompute();}
+function setText(k,f,val){state[k][f]=val;}
+
+function maturityFor(avg){
+  if(avg>=4.3)return['Optimized','#2f6b45','#dcebe1'];
+  if(avg>=3.5)return['Established','#3f7d52','#e0efe4'];
+  if(avg>=2.5)return['Developing','#c2872b','#f6ecd6'];
+  if(avg>=1.5)return['Emerging','#c2872b','#f6e6cf'];
+  return['Foundational','#b04a3c','#f6e3df'];
+}
+function barColor(avg){if(avg>=3.5)return'#3f7d52';if(avg>=2.5)return'#c2872b';return'#b04a3c';}
+
+function recompute(){
+  let answered=0, sumAll=0, cntAll=0;
+  const catStats=DATA.categories.map(()=>({sum:0,cnt:0}));
+  for(const k in state){
+    const s=state[k];
+    if(s.type==='scored'){
+      if(s.score){answered++;sumAll+=s.score;cntAll++;catStats[s.cat].sum+=s.score;catStats[s.cat].cnt++;}
+    }
+  }
+  const avg=cntAll?sumAll/cntAll:0;
+  document.getElementById('dScore').textContent=avg?avg.toFixed(1):'0';
+  const pct=Math.round(answered/qcount*100);
+  document.getElementById('dPct').textContent=pct+'% complete';
+  document.getElementById('dProg').style.width=pct+'%';
+  const mp=document.getElementById('dMaturity');
+  if(cntAll){const[lbl,fg,bg]=maturityFor(avg);mp.textContent=lbl;mp.style.color=fg;mp.style.background=bg;}
+  else{mp.textContent='Not started';mp.style.color='var(--ink-soft)';mp.style.background='var(--line-soft)';}
+  catStats.forEach((cs,i)=>{const el=document.getElementById('cs'+i);
+    el.innerHTML=cs.cnt?'<span class="lbl">avg </span><b>'+(cs.sum/cs.cnt).toFixed(1)+'</b>':'<span class="lbl">avg </span><b>–</b>';});
+  buildSummary(catStats,avg,answered);
+}
+
+function buildSummary(catStats,avg,answered){
+  const lead=document.getElementById('summaryLead');
+  if(!answered){lead.textContent='Begin answering questions to see scores and recommendations appear here.';
+    document.getElementById('bars').innerHTML='';document.getElementById('recs').innerHTML='';return;}
+  const[lbl]=maturityFor(avg);
+  lead.innerHTML='Overall maturity: <b>'+lbl+'</b> &nbsp;·&nbsp; Average effectiveness <b>'+avg.toFixed(1)+' / 5.0</b> across '+answered+' scored items.';
+  const bars=DATA.categories.map((c,i)=>{const cs=catStats[i];const a=cs.cnt?cs.sum/cs.cnt:0;
+    return{nm:c.name,avg:a,cnt:cs.cnt};}).filter(b=>b.cnt>0).sort((x,y)=>x.avg-y.avg);
+  document.getElementById('bars').innerHTML=bars.map(b=>`<div class="bar-row">
+    <span class="nm">${b.nm}</span>
+    <div class="bar-track"><div class="bar-fill" style="width:${b.avg/5*100}%;background:${barColor(b.avg)}"></div></div>
+    <span class="val">${b.avg.toFixed(1)}</span></div>`).join('');
+  // recommendations: weakest categories + Not Present items + No answers
+  const recs=[];
+  bars.slice(0,3).forEach(b=>{if(b.avg<3.5){const p=b.avg<2.5?'high':'med';
+    recs.push({p,h:b.nm+' needs attention (avg '+b.avg.toFixed(1)+')',
+      b:'This is among the lowest-scoring areas. Prioritize a focused improvement plan, budget, and an owner for follow-through.'});}});
+  let np=[];
+  for(const k in state){const s=state[k];if(s.status==='Not Present')np.push(k);}
+  if(np.length)recs.push({p:'high',h:np.length+' item(s) marked “Not Present”',
+    b:'These represent capability gaps. Review each to decide whether it is needed for your church\'s size and ministry goals.'});
+  for(const k in state){const s=state[k];if(s.yn==='No'){recs.push({p:'med',h:'Leadership / pain-point flag',b:'A yes/no item was answered “No.” Capture the explanation in the Needs/Explanation field and address it in the roadmap.'});break;}}
+  if(avg>=3.5&&!recs.some(r=>r.p==='high'))recs.push({p:'low',h:'Strong overall footing',b:'Maintain momentum: keep documentation, licensing, and training current, and revisit this assessment annually.'});
+  document.getElementById('recs').innerHTML='<h3>Recommendations</h3>'+recs.map(r=>`<div class="rec ${r.p}">
+    <div class="rh"><span class="prio ${r.p}">${r.p} priority</span>${r.h}</div><div class="rb">${r.b}</div></div>`).join('');
+}
+
+function collect(){
+  const meta={church:m_church.value,loc:m_loc.value,assessor:m_assessor.value,date:m_date.value};
+  return{meta,state};
+}
+function exportData(){
+  const blob=new Blob([JSON.stringify(collect(),null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='church-tech-assessment.json';a.click();
+}
+
+function exportReport(){
+  const{meta}=collect();
+  let sumAll=0,cntAll=0;const catStats=DATA.categories.map(()=>({sum:0,cnt:0,rows:[]}));
+  DATA.categories.forEach((cat,ci)=>{cat.areas.forEach((ar,ai)=>{ar.questions.forEach((qq,qi)=>{
+    const s=state[key(ci,ai,qi)];
+    if(qq.type==='scored'){if(s.score){sumAll+=s.score;cntAll++;catStats[ci].sum+=s.score;catStats[ci].cnt++;}
+      catStats[ci].rows.push({q:qq.q,status:s.status||'—',name:s.name||'',score:s.score||'—',needs:s.needs||''});}
+    else{catStats[ci].rows.push({q:qq.q,yn:s.yn||'—',explain:s.explain||'',isYN:true});}
+  });});});
+  const avg=cntAll?sumAll/cntAll:0;const[lbl]=maturityFor(avg);
+  const rows=DATA.categories.map((c,i)=>({nm:c.name,avg:catStats[i].cnt?catStats[i].sum/catStats[i].cnt:null}));
+  let html='<html><head><meta charset="utf-8"><title>Assessment Report — '+(meta.church||'Church')+'</title><style>'+
+    'body{font-family:Georgia,serif;max-width:800px;margin:40px auto;padding:0 24px;color:#222;line-height:1.5}'+
+    'h1{font-size:28px;color:#5e3a21;margin-bottom:2px}h2{color:#7a4b2b;border-bottom:2px solid #b8893f;padding-bottom:4px;margin-top:34px;font-size:20px}'+
+    'h3{color:#5e3a21;margin:18px 0 4px;font-size:15px}.meta{color:#555;margin-bottom:8px}'+
+    '.pill{display:inline-block;padding:4px 14px;border-radius:99px;background:#f6ecd6;color:#8a5a1a;font-weight:bold;font-size:14px}'+
+    'table{width:100%;border-collapse:collapse;margin:8px 0 18px;font-family:Arial,sans-serif;font-size:13px}'+
+    'th,td{border:1px solid #ddd;padding:7px 9px;text-align:left;vertical-align:top}th{background:#f4f1ea}'+
+    '.s{font-weight:bold}.bar{height:14px;background:#eee;border-radius:8px;overflow:hidden;display:inline-block;width:200px;vertical-align:middle}'+
+    '.bar>i{display:block;height:100%}@media print{body{margin:0}}</style></head><body>';
+  html+='<h1>Technology Assessment Report</h1>';
+  html+='<div class="meta"><b>'+(meta.church||'—')+'</b>'+(meta.loc?' · '+meta.loc:'')+'</div>';
+  html+='<div class="meta">Assessor: '+(meta.assessor||'—')+' &nbsp; | &nbsp; Date: '+(meta.date||'—')+'</div>';
+  html+='<p>Overall maturity: <span class="pill">'+lbl+'</span> &nbsp; Average effectiveness: <b>'+avg.toFixed(1)+' / 5.0</b> ('+cntAll+' scored items)</p>';
+  html+='<h2>Scores by Category</h2><table><tr><th>Category</th><th>Average</th><th></th></tr>';
+  rows.forEach(r=>{const a=r.avg;const col=a==null?'#ccc':(a>=3.5?'#3f7d52':a>=2.5?'#c2872b':'#b04a3c');
+    html+='<tr><td>'+r.nm+'</td><td class="s">'+(a==null?'—':a.toFixed(1))+'</td><td><span class="bar"><i style="width:'+(a==null?0:a/5*100)+'%;background:'+col+'"></i></span></td></tr>';});
+  html+='</table>';
+  DATA.categories.forEach((c,i)=>{html+='<h2>'+(i+1)+'. '+c.name+'</h2>';
+    catStats[i].rows.forEach(r=>{
+      if(r.isYN){html+='<h3>'+r.q+'</h3><table><tr><th>Response</th><td>'+r.yn+'</td></tr>'+(r.explain?'<tr><th>Explanation</th><td>'+esc(r.explain)+'</td></tr>':'')+'</table>';}
+      else{html+='<h3>'+r.q+'</h3><table>'+
+        '<tr><th>Status</th><td>'+r.status+'</td><th>Score</th><td class="s">'+r.score+'</td></tr>'+
+        '<tr><th>Technology</th><td colspan=3>'+esc(r.name)+'</td></tr>'+
+        (r.needs?'<tr><th>Needs</th><td colspan=3>'+esc(r.needs)+'</td></tr>':'')+'</table>';}
+    });});
+  html+='<p style="margin-top:40px;color:#888;font-style:italic">Generated by the Church Technology Assessment Tool.</p></body></html>';
+  const w=window.open('','_blank');w.document.write(html);w.document.close();
+}
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+document.getElementById('m_date').valueAsDate=new Date();
+render();recompute();
+</script>
+</body>
+</html>
